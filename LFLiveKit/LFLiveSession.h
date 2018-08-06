@@ -113,10 +113,14 @@ typedef NS_ENUM(NSInteger,LFLiveCaptureTypeMask) {
 /** The reconnectCount control reconnect count (重连次数) *.*/
 @property (nonatomic, assign) NSUInteger reconnectCount;
 
-/*** The warterMarkView control whether the watermark is displayed or not ,if set ni,will remove watermark,otherwise add. 
+/*** The waterMarkView control whether the watermark is displayed or not ,if set ni,will remove watermark,otherwise add. 
  set alpha represent mix.Position relative to outVideoSize.
  *.*/
-@property (nonatomic, strong, nullable) UIView *warterMarkView;
+@property (nonatomic, strong, nullable) UIView *waterMarkView;
+
+
+@property (nonatomic, strong, nullable) UIView *overlayView;
+
 
 /* The currentImage is videoCapture shot */
 @property (nonatomic, strong,readonly ,nullable) UIImage *currentImage;

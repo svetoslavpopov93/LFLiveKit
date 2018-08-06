@@ -29,8 +29,10 @@
 @property (nonatomic, strong) LFLiveVideoConfiguration *configuration;
 
 @property (nonatomic, strong) GPUImageAlphaBlendFilter *blendFilter;
+@property (nonatomic, strong) GPUImageAlphaBlendFilter *overlayBlendFilter;
+
 @property (nonatomic, strong) GPUImageUIElement *uiElementInput;
-@property (nonatomic, strong) UIView *waterMarkContentView;
+@property (nonatomic, strong) UIView *overlayContentView;
 
 @property (nonatomic, strong) GPUImageMovieWriter *movieWriter;
 
@@ -204,20 +206,32 @@
     return _zoomScale;
 }
 
-- (void)setWarterMarkView:(UIView *)warterMarkView{
-    if(_warterMarkView && _warterMarkView.superview){
-        [_warterMarkView removeFromSuperview];
-        _warterMarkView = nil;
+- (void)setWaterMarkView:(UIView *)waterMarkView{
+    if(_waterMarkView && _waterMarkView.superview){
+        [_waterMarkView removeFromSuperview];
+        _waterMarkView = nil;
     }
-    _warterMarkView = warterMarkView;
-    self.blendFilter.mix = warterMarkView.alpha;
-    [self.waterMarkContentView addSubview:_warterMarkView];
+    _waterMarkView = waterMarkView;
+    self.blendFilter.mix = waterMarkView.alpha;
+    [self.overlayContentView addSubview:_waterMarkView];
+    [self reloadFilter];
+}
+
+- (void)setOverlayView:(UIView *)overlayView {
+    if(_overlayView && _overlayView.superview){
+        [_overlayView removeFromSuperview];
+        _overlayView = nil;
+    }
+    
+    _overlayView = overlayView;
+    self.overlayBlendFilter.mix = overlayView.alpha;
+    [self.overlayContentView addSubview:_overlayView];
     [self reloadFilter];
 }
 
 - (GPUImageUIElement *)uiElementInput{
     if(!_uiElementInput){
-        _uiElementInput = [[GPUImageUIElement alloc] initWithView:self.waterMarkContentView];
+        _uiElementInput = [[GPUImageUIElement alloc] initWithView:self.overlayContentView];
     }
     return _uiElementInput;
 }
@@ -231,13 +245,22 @@
     return _blendFilter;
 }
 
-- (UIView *)waterMarkContentView{
-    if(!_waterMarkContentView){
-        _waterMarkContentView = [UIView new];
-        _waterMarkContentView.frame = CGRectMake(0, 0, self.configuration.videoSize.width, self.configuration.videoSize.height);
-        _waterMarkContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+- (GPUImageAlphaBlendFilter *)overlayBlendFilter {
+    if(!_overlayBlendFilter){
+        _overlayBlendFilter = [[GPUImageAlphaBlendFilter alloc] init];
+        _overlayBlendFilter.mix = 1.0;
+        [_overlayBlendFilter disableSecondFrameCheck];
     }
-    return _waterMarkContentView;
+    return _overlayBlendFilter;
+}
+
+- (UIView *)overlayContentView{
+    if(!_overlayContentView){
+        _overlayContentView = [UIView new];
+        _overlayContentView.frame = CGRectMake(0, 0, self.configuration.videoSize.width, self.configuration.videoSize.height);
+        _overlayContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }
+    return _overlayContentView;
 }
 
 - (GPUImageView *)gpuImageView{
@@ -282,6 +305,7 @@
 - (void)reloadFilter{
     [self.filter removeAllTargets];
     [self.blendFilter removeAllTargets];
+    [self.overlayBlendFilter removeAllTargets];
     [self.uiElementInput removeAllTargets];
     [self.videoCamera removeAllTargets];
     [self.output removeAllTargets];
@@ -311,13 +335,24 @@
     }
     
     //< 添加水印
-    if(self.warterMarkView){
-        [self.filter addTarget:self.blendFilter];
-        [self.uiElementInput addTarget:self.blendFilter];
-        [self.blendFilter addTarget:self.gpuImageView];
-        if(self.saveLocalVideo) [self.blendFilter addTarget:self.movieWriter];
+    if(self.waterMarkView || self.overlayContentView) {
+        if (self.waterMarkView) {
+            [self.filter addTarget:self.blendFilter];
+            [self.uiElementInput addTarget:self.blendFilter];
+            [self.blendFilter addTarget:self.gpuImageView];
+            if(self.saveLocalVideo) [self.blendFilter addTarget:self.movieWriter];
+        }
+        
+        if (self.overlayContentView) {
+            [self.filter addTarget:self.overlayBlendFilter];
+            [self.uiElementInput addTarget:self.overlayBlendFilter];
+            [self.overlayBlendFilter addTarget:self.gpuImageView];
+            if(self.saveLocalVideo) [self.overlayBlendFilter addTarget:self.movieWriter];
+        }
+        
         [self.filter addTarget:self.output];
         [self.uiElementInput update];
+        
     }else{
         [self.filter addTarget:self.output];
         [self.output addTarget:self.gpuImageView];
@@ -327,6 +362,7 @@
     [self.filter forceProcessingAtSize:self.configuration.videoSize];
     [self.output forceProcessingAtSize:self.configuration.videoSize];
     [self.blendFilter forceProcessingAtSize:self.configuration.videoSize];
+    [self.overlayBlendFilter forceProcessingAtSize:self.configuration.videoSize];
     [self.uiElementInput forceProcessingAtSize:self.configuration.videoSize];
     
     

@@ -332,13 +332,33 @@
     return self.audioCaptureSource.muted;
 }
 
-- (void)setWarterMarkView:(UIView *)warterMarkView{
-    [self.videoCaptureSource setWarterMarkView:warterMarkView];
+- (void)setWaterMarkView:(UIView *)waterMarkView{
+    [self.videoCaptureSource setWaterMarkView:waterMarkView];
 }
 
-- (nullable UIView*)warterMarkView{
-    return self.videoCaptureSource.warterMarkView;
+
+
+
+- (void)setOverlayView:(UIView *)overlayView {
+    [self.videoCaptureSource setOverlayView:overlayView];
 }
+
+
+
+- (nullable UIView*)waterMarkView {
+    return self.videoCaptureSource.waterMarkView;
+}
+
+
+
+
+- (nullable UIView*)overlayView {
+    return self.videoCaptureSource.overlayView;
+}
+
+
+
+
 
 - (nullable UIImage *)currentImage{
     return self.videoCaptureSource.currentImage;
